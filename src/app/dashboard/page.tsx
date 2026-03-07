@@ -90,7 +90,25 @@ function DashboardContent() {
                         </div>
                     )}
 
-                    <div className="grid gap-6 lg:gap-8 grid-cols-1">
+                    <div className="grid gap-6 md:grid-cols-2 lg:gap-8">
+
+                        {/* Campaigns Card */}
+                        <Link href="/dashboard/campaigns" className="group bg-orange-600 p-8 sm:p-10 rounded-[2.5rem] border border-orange-500 shadow-2xl shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-95 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-10 opacity-10 scale-150 rotate-[15deg] group-hover:rotate-[25deg] transition-transform duration-700">
+                                <svg width="150" height="150" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" /></svg>
+                            </div>
+                            <div>
+                                <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center text-white text-3xl mb-6 shadow-inner">
+                                    📦
+                                </div>
+                                <h2 className="text-3xl font-black text-white mb-2">Campanhas Shopee</h2>
+                                <p className="text-orange-100 font-bold max-w-[240px]">Explore produtos em alta e agende suas postagens agora.</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-white font-black text-lg">
+                                Explorar Agora
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-2 transition-transform"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                            </div>
+                        </Link>
 
                         {/* Step 1: Credentials */}
                         <section className="bg-white p-6 sm:p-8 md:p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 transition-all hover:shadow-orange-200/20">
