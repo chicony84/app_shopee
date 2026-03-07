@@ -75,7 +75,17 @@ export default function Home({
         )}
 
         <div className="w-full bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <h2 className="text-xl font-bold mb-4 text-slate-800">1. Credenciais da Shopee</h2>
+          <h2 className="text-xl font-bold mb-2 text-slate-800">1. Credenciais da Shopee</h2>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+            <h3 className="font-semibold text-blue-800 mb-1 text-sm">Onde encontro essas informações?</h3>
+            <ol className="list-decimal list-inside text-sm text-blue-700 space-y-1">
+              <li>Acesse a <a href="https://open.shopee.com/" target="_blank" rel="noreferrer" className="underline font-medium hover:text-blue-900">Shopee Open Platform</a>.</li>
+              <li>Faça login com sua conta da Shopee.</li>
+              <li>Vá em <strong>Console</strong> {">"} <strong>App Management</strong>.</li>
+              <li>Selecione o seu App (ou crie um novo) e copie o <strong>Partner ID</strong> e a <strong>Partner Key</strong> do aplicativo.</li>
+            </ol>
+          </div>
 
           {isLoading ? (
             <p className="text-slate-500 animate-pulse">Carregando...</p>
