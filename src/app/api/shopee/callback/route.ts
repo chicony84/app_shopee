@@ -17,8 +17,17 @@ export async function GET(request: Request) {
   const shopId = parseInt(shopIdStr, 10);
 
   try {
+    // Mock NextAuth session
+    let user = await prisma.user.findFirst();
+
+    if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
+      return NextResponse.redirect(new URL("/?error=missing_credentials", request.url));
+    }
+
+    const partnerId = parseInt(user.shopeePartnerId, 10);
+
     // 1. Exchange the code for the access token
-    const tokenData = await getAccessToken(code, shopId);
+    const tokenData = await getAccessToken(code, shopId, partnerId, user.shopeePartnerKey);
 
     if (tokenData.error) {
       console.error("Shopee Auth Error:", tokenData);
@@ -32,9 +41,9 @@ export async function GET(request: Request) {
 
     // 2. Temporarily mock a user for testing purposes until NextAuth is implemented
     // Let's create or find a dummy user to link this account to.
-    let user = await prisma.user.findFirst();
-    if (!user) {
-      user = await prisma.user.create({
+    let dbUser = await prisma.user.findFirst();
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
         data: {
           name: "Test User",
           email: "test@example.com",
@@ -47,7 +56,7 @@ export async function GET(request: Request) {
     await prisma.account.upsert({
       where: {
         userId_provider: {
-          userId: user.id,
+          userId: dbUser.id,
           provider: "shopee"
         }
       },
@@ -57,7 +66,7 @@ export async function GET(request: Request) {
         metadata: { shop_id: shopId }
       },
       create: {
-        userId: user.id,
+        userId: dbUser.id,
         provider: "shopee",
         accessToken: access_token,
         refreshToken: refresh_token,
