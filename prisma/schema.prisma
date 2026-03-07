@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  accounts  Account[]
+  schedules Schedule[]
+}
+
+model Account {
+  id           String   @id @default(uuid())
+  userId       String
+  provider     String   // e.g., "shopee", "meta", "whatsapp"
+  accessToken  String
+  refreshToken String?
+  metadata     Json?    // Store shop_id, page_id, session_info, etc.
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+model Schedule {
+  id           String   @id @default(uuid())
+  userId       String
+  productId    String   // ID do produto na Shopee
+  productName  String
+  productUrl   String
+  imageUrl     String?
+  price        Float?
+  destinations String[] // Array de destinos: ["whatsapp", "facebook", "instagram"]
+  cronRule     String   // Regra de quando postar (ex: "0 10 * * *")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs         Log[]
+}
+
+model Log {
+  id           String   @id @default(uuid())
+  scheduleId   String
+  status       String   // "success", "error", "pending"
+  errorMessage String?
+  executedAt   DateTime @default(now())
+
+  schedule     Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
