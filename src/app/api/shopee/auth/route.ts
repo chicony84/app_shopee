@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const user = await prisma.user.findFirst();
 
     if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
-      return NextResponse.redirect(new URL("/?error=missing_credentials", request.url));
+      return NextResponse.redirect(new URL("/dashboard?error=missing_credentials", request.url));
     }
 
     // Use the host from the request to construct the callback URL dynamically

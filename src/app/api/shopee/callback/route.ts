@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     let user = await prisma.user.findFirst();
 
     if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
-      return NextResponse.redirect(new URL("/?error=missing_credentials", request.url));
+      return NextResponse.redirect(new URL("/dashboard?error=missing_credentials", request.url));
     }
 
     const partnerId = parseInt(user.shopeePartnerId, 10);
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     // 4. Redirect the user back to the dashboard or success page
     const host = request.headers.get("host") || "localhost:3000";
     const protocol = host.includes("localhost") ? "http" : "https";
-    return NextResponse.redirect(`${protocol}://${host}/?shopee_connected=true`);
+    return NextResponse.redirect(`${protocol}://${host}/dashboard?shopee_connected=true`);
 
   } catch (error) {
     console.error("Error during Shopee API callback processing:", error);
