@@ -2,11 +2,10 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";
 import { getAmsCampaignProducts } from "@/lib/shopee/auth";
-import { getPrisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
     try {
-        const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const pageSize = parseInt(searchParams.get("page_size") || "20");
         const pageNo = parseInt(searchParams.get("page_no") || "1");
