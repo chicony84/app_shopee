@@ -5,18 +5,17 @@ import * as dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 
-// 🚀 FORÇA O CARREGAMENTO DO .ENV NA VPS
-// O Next.js às vezes falha ao carregar em domínios públicos (Easypanel, etc)
+// 🚀 CARREGAMENTO FORÇADO DO .ENV
 try {
     const envPath = path.resolve(process.cwd(), ".env");
     if (fs.existsSync(envPath)) {
-        const env = dotenv.parse(fs.readFileSync(envPath));
-        for (const key in env) {
-            process.env[key] = process.env[key] || env[key];
+        const envConfig = dotenv.parse(fs.readFileSync(envPath));
+        for (const k in envConfig) {
+            process.env[k] = process.env[k] || envConfig[k];
         }
     }
 } catch (e) {
-    console.error("Erro ao carregar .env manualmente:", e);
+    console.error("Erro no carregamento manual do .env:", e);
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -26,28 +25,36 @@ const globalForPrisma = globalThis as unknown as {
 const createPrismaClient = () => {
     const url = process.env.DATABASE_URL;
 
+    // Log de diagnóstico (Aparece no console da Easypanel)
+    console.log("🛠️ Prisma Init Diagnostic:", {
+        hasUrl: !!url,
+        urlPrefix: url ? url.substring(0, 10) + "..." : "NONE",
+        nodeEnv: process.env.NODE_ENV
+    });
+
     if (!url) {
-        console.error("❌ ERRO CRÍTICO: DATABASE_URL não encontrada no ambiente.");
-        throw new Error("DATABASE_URL is missing");
+        // Se a URL sumir, o Prisma falha. Vamos avisar mas não deixar o construtor vazio.
+        console.error("❌ DATABASE_URL FALTANDO NO AMBIENTE!");
+        return new PrismaClient({
+            datasourceUrl: "postgresql://missing_url_error@localhost:5432/error",
+        });
     }
 
-    const pool = new pg.Pool({
-        connectionString: url,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-    });
+    try {
+        const pool = new pg.Pool({ connectionString: url });
+        const adapter = new PrismaPg(pool);
 
-    const adapter = new PrismaPg(pool);
-
-    // No Prisma 7, PASSAR O adapter É OBRIGATÓRIO SE VOCÊ QUER USAR DRIVER ADAPTER
-    // E passar a datasourceUrl ajuda a evitar o erro de construtor vazio.
-    return new PrismaClient({
-        adapter,
-        // @ts-ignore
-        datasourceUrl: url,
-        log: ["error"],
-    });
+        return new PrismaClient({
+            adapter,
+            // @ts-ignore
+            datasourceUrl: url, // Garante que as opções NÃO sejam vazias
+            log: ["error", "warn"],
+        });
+    } catch (err) {
+        console.error("❌ Erro ao criar o Pool de conexão ou Adapter:", err);
+        // Fallback para evitar erro de inicialização vazia
+        return new PrismaClient({ datasourceUrl: url });
+    }
 };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
