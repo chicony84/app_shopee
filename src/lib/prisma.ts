@@ -25,19 +25,15 @@ const globalForPrisma = globalThis as unknown as {
 const createPrismaClient = () => {
     const url = process.env.DATABASE_URL;
 
-    // Log de diagnóstico (Aparece no console da Easypanel)
     console.log("🛠️ Prisma Init Diagnostic:", {
         hasUrl: !!url,
-        urlPrefix: url ? url.substring(0, 10) + "..." : "NONE",
         nodeEnv: process.env.NODE_ENV
     });
 
     if (!url) {
-        // Se a URL sumir, o Prisma falha. Vamos avisar mas não deixar o construtor vazio.
         console.error("❌ DATABASE_URL FALTANDO NO AMBIENTE!");
-        return new PrismaClient({
-            datasourceUrl: "postgresql://missing_url_error@localhost:5432/error",
-        });
+        // Usamos a configuração padrão que buscará do env no runtime ou falhará graciosamente
+        return new PrismaClient();
     }
 
     try {
@@ -46,14 +42,11 @@ const createPrismaClient = () => {
 
         return new PrismaClient({
             adapter,
-            // @ts-ignore
-            datasourceUrl: url, // Garante que as opções NÃO sejam vazias
             log: ["error", "warn"],
         });
     } catch (err) {
         console.error("❌ Erro ao criar o Pool de conexão ou Adapter:", err);
-        // Fallback para evitar erro de inicialização vazia
-        return new PrismaClient({ datasourceUrl: url });
+        return new PrismaClient();
     }
 };
 
