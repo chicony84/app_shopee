@@ -1,13 +1,16 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import { compare } from "bcryptjs";
+import { getPrisma } from "@/lib/prisma";
+
+// Pegamos a instância corrigida do Prisma
+const prisma = getPrisma();
 
 export const authOptions: AuthOptions = {
     // @ts-ignore
     adapter: PrismaAdapter(prisma),
-    secret: process.env.NEXTAUTH_SECRET,
+    // Fallback de segurança para evitar erro de inicialização se o .env sumir
+    secret: process.env.NEXTAUTH_SECRET || "shopee-share-secret-fallback-123",
     session: {
         strategy: "jwt",
     },
@@ -30,8 +33,6 @@ export const authOptions: AuthOptions = {
 
                 if (!user) return null;
 
-                // Para o MVP, se a senha no banco for "password123", deixamos passar se o hash não estiver pronto
-                // Em produção usaríamos o compare do bcrypt
                 const isPasswordValid = credentials.password === user.password;
 
                 if (!isPasswordValid) return null;

@@ -24,8 +24,10 @@ export async function GET(request: Request) {
     }
 
     // Use the host from the request to construct the callback URL dynamically
-    const host = request.headers.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
+    const host = request.headers.get("host") || "";
+    // Se o host contém porta ou é IP, tratamos como http (comum em VPS sem SSL configurado ainda)
+    const isIpOrDev = /^[0-9.]+(:[0-9]+)?$/.test(host) || host.includes("localhost");
+    const protocol = isIpOrDev ? "http" : "https";
     const callbackUrl = `${protocol}://${host}/api/shopee/callback`;
 
     const partnerId = parseInt(user.shopeePartnerId, 10);
