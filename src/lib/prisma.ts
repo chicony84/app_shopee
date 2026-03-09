@@ -23,18 +23,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const createPrismaClient = () => {
-    const url = process.env.DATABASE_URL;
+    // Na VPS/Easypanel, DATABASE_URL pode não estar disponível no BUILD, apenas no RUNTIME.
+    const url = process.env.DATABASE_URL || "postgresql://build_time_placeholder:5432/db";
 
     console.log("🛠️ Prisma Init Diagnostic:", {
-        hasUrl: !!url,
+        hasRealUrl: !!process.env.DATABASE_URL,
         nodeEnv: process.env.NODE_ENV
     });
-
-    if (!url) {
-        console.error("❌ DATABASE_URL FALTANDO NO AMBIENTE!");
-        // Usamos a configuração padrão que buscará do env no runtime ou falhará graciosamente
-        return new PrismaClient();
-    }
 
     try {
         const pool = new pg.Pool({ connectionString: url });
@@ -42,11 +37,17 @@ const createPrismaClient = () => {
 
         return new PrismaClient({
             adapter,
+            // @ts-ignore - Ajudando o compilador a entender que passamos opções válidas
+            datasourceUrl: url,
             log: ["error", "warn"],
         });
     } catch (err) {
-        console.error("❌ Erro ao criar o Pool de conexão ou Adapter:", err);
-        return new PrismaClient();
+        console.error("❌ Erro ao inicializar PrismaClient:", err);
+        // Fallback básico para não travar o compilador
+        return new PrismaClient({
+            // @ts-ignore
+            datasourceUrl: url
+        });
     }
 };
 
