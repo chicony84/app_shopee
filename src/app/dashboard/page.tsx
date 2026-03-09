@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 function DashboardContent() {
+    console.log("🚀 Dashboard v2.0 - Auth Removed");
     const searchParams = useSearchParams();
     const isConnected = searchParams?.get("shopee_connected") === "true";
 
