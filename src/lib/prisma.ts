@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 
-// 🚀 CARREGAMENTO FORÇADO DO .ENV
+// 🚀 CARREGAMENTO FORÇADO DO .ENV PARA AMBIENTES VPS
 try {
     const envPath = path.resolve(process.cwd(), ".env");
     if (fs.existsSync(envPath)) {
@@ -15,7 +15,7 @@ try {
         }
     }
 } catch (e) {
-    console.error("Erro no carregamento manual do .env:", e);
+    // Silencioso no build
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -23,31 +23,38 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const createPrismaClient = () => {
-    // Na VPS/Easypanel, DATABASE_URL pode não estar disponível no BUILD, apenas no RUNTIME.
-    const url = process.env.DATABASE_URL || "postgresql://build_time_placeholder:5432/db";
+    const url = process.env.DATABASE_URL;
 
-    console.log("🛠️ Prisma Init Diagnostic:", {
-        hasRealUrl: !!process.env.DATABASE_URL,
-        nodeEnv: process.env.NODE_ENV
+    console.log("🛠️ [Prisma Logger]:", {
+        hasUrl: !!url,
+        env: process.env.NODE_ENV
     });
 
+    // Se não houver URL, retornamos um cliente com log ativado para satisfazer o "non-empty"
+    // mas sem tentar conectar ao banco (evita erro durante o build estático).
+    if (!url) {
+        return new PrismaClient({
+            log: ["error"]
+        });
+    }
+
     try {
-        const pool = new pg.Pool({ connectionString: url });
+        const pool = new pg.Pool({
+            connectionString: url,
+            max: 10
+        });
         const adapter = new PrismaPg(pool);
 
+        // No Prisma 7, passar o 'adapter' já o torna "non-empty".
+        // Não passamos 'datasources' ou 'datasourceUrl' para evitar erros de validação
+        // já que o adapter assume o controle da conexão.
         return new PrismaClient({
             adapter,
-            // @ts-ignore - Ajudando o compilador a entender que passamos opções válidas
-            datasourceUrl: url,
-            log: ["error", "warn"],
+            log: ["error", "warn"]
         });
     } catch (err) {
-        console.error("❌ Erro ao inicializar PrismaClient:", err);
-        // Fallback básico para não travar o compilador
-        return new PrismaClient({
-            // @ts-ignore
-            datasourceUrl: url
-        });
+        console.error("❌ Falha ao criar PrismaClient com Adapter:", err);
+        return new PrismaClient({ log: ["error"] });
     }
 };
 
