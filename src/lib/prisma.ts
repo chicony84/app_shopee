@@ -1,3 +1,4 @@
+import "server-only";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
@@ -6,15 +7,36 @@ const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-const DATABASE_URL = process.env.DATABASE_URL;
+const createPrismaClient = () => {
+    const databaseUrl = process.env.DATABASE_URL;
 
-const pool = new pg.Pool({ connectionString: DATABASE_URL });
-const adapter = new PrismaPg(pool);
+    if (!databaseUrl) {
+        console.error("DATABASE_URL is missing!");
+        throw new Error("Missing DATABASE_URL");
+    }
 
-export const prisma =
-    globalForPrisma.prisma ??
-    new PrismaClient({ adapter });
+    const pool = new pg.Pool({
+        connectionString: databaseUrl,
+        max: 20
+    });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+    const adapter = new PrismaPg(pool);
+
+    // Provide both adapter and datasourceUrl (even if ignored) 
+    // to satisfy internal Prisma 7 validation checks if any.
+    return new PrismaClient({
+        adapter,
+        // @ts-ignore - Some versions might complain about both, but let's try to satisfy the "non-empty" check 
+        // if for some reason the adapter property is not enough.
+        datasourceUrl: databaseUrl,
+        log: ["error", "warn"]
+    });
+};
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = prisma;
+}
 
 export const getPrisma = () => prisma;

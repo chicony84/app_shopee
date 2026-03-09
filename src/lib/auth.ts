@@ -7,6 +7,7 @@ import { compare } from "bcryptjs";
 export const authOptions: AuthOptions = {
     // @ts-ignore
     adapter: PrismaAdapter(prisma),
+    secret: process.env.NEXTAUTH_SECRET,
     session: {
         strategy: "jwt",
     },
