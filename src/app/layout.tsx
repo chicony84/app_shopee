@@ -17,8 +17,6 @@ export const metadata: Metadata = {
   description: "Simplifique sua rotina de afiliado Shopee com postagens automáticas e inteligentes.",
 };
 
-import { Providers } from "@/components/Providers";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +27,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );

@@ -3,31 +3,21 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAmsCampaignProducts } from "@/lib/shopee/auth";
 import { getPrisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getActiveUser } from "@/lib/user";
 
 export async function GET(request: Request) {
     try {
         const prisma = getPrisma();
-        const session = await getServerSession(authOptions);
+        const user = await getActiveUser();
 
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
+            return NextResponse.json({ error: "Missing partner credentials" }, { status: 400 });
         }
 
         const { searchParams } = new URL(request.url);
         const pageSize = parseInt(searchParams.get("page_size") || "20");
         const pageNo = parseInt(searchParams.get("page_no") || "1");
         const keyword = searchParams.get("keyword") || "";
-
-        // 1. Get current user & Shopee account
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email }
-        });
-
-        if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
-            return NextResponse.json({ error: "Missing partner credentials" }, { status: 400 });
-        }
 
         const account = await prisma.account.findUnique({
             where: {

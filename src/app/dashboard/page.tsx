@@ -2,20 +2,11 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 function DashboardContent() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
     const searchParams = useSearchParams();
     const isConnected = searchParams?.get("shopee_connected") === "true";
-
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login?callbackUrl=/dashboard");
-        }
-    }, [status, router]);
 
     const [partnerId, setPartnerId] = useState("");
     const [partnerKey, setPartnerKey] = useState("");
@@ -24,8 +15,6 @@ function DashboardContent() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (status !== "authenticated") return;
-
         // Check if the user already has credentials saved
         const fetchCredentials = async () => {
             try {
@@ -42,7 +31,7 @@ function DashboardContent() {
             }
         };
         fetchCredentials();
-    }, [status]);
+    }, []);
 
     const handleSaveCredentials = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,10 +56,6 @@ function DashboardContent() {
             setIsSaving(false);
         }
     };
-
-    if (status === "loading") {
-        return <div className="min-h-screen flex items-center justify-center bg-slate-50 font-bold text-slate-400">Verificando sessão...</div>;
-    }
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-[family-name:var(--font-geist-sans)] selection:bg-orange-100">

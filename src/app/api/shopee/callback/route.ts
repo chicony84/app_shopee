@@ -3,8 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAccessToken } from "@/lib/shopee/auth";
 import { getPrisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getActiveUser } from "@/lib/user";
 
 export async function GET(request: Request) {
   const prisma = getPrisma();
@@ -19,15 +18,7 @@ export async function GET(request: Request) {
   const shopId = parseInt(shopIdStr, 10);
 
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
+    const user = await getActiveUser();
 
     if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
       return NextResponse.redirect(new URL("/dashboard?error=missing_credentials", request.url));
@@ -71,8 +62,9 @@ export async function GET(request: Request) {
     });
 
     // 3. Redirect the user back to the dashboard
-    const host = request.headers.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
+    const host = request.headers.get("host") || "";
+    const isIpOrDev = /^[0-9.]+(:[0-9]+)?$/.test(host) || host.includes("localhost");
+    const protocol = isIpOrDev ? "http" : "https";
     return NextResponse.redirect(`${protocol}://${host}/dashboard?shopee_connected=true`);
 
   } catch (error) {
