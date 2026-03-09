@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAccessToken } from "@/lib/shopee/auth";
 import { getPrisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: Request) {
   const prisma = getPrisma();
@@ -17,8 +19,15 @@ export async function GET(request: Request) {
   const shopId = parseInt(shopIdStr, 10);
 
   try {
-    // Mock NextAuth session
-    let user = await prisma.user.findFirst();
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    });
 
     if (!user || !user.shopeePartnerId || !user.shopeePartnerKey) {
       return NextResponse.redirect(new URL("/dashboard?error=missing_credentials", request.url));
@@ -39,24 +48,11 @@ export async function GET(request: Request) {
 
     const { access_token, refresh_token } = tokenData;
 
-    // 2. Temporarily mock a user for testing purposes until NextAuth is implemented
-    // Let's create or find a dummy user to link this account to.
-    let dbUser = await prisma.user.findFirst();
-    if (!dbUser) {
-      dbUser = await prisma.user.create({
-        data: {
-          name: "Test User",
-          email: "test@example.com",
-          password: "password123" // just a dummy
-        }
-      });
-    }
-
-    // 3. Upsert the Account into the database
+    // 2. Upsert the Account into the database
     await prisma.account.upsert({
       where: {
         userId_provider: {
-          userId: dbUser.id,
+          userId: user.id,
           provider: "shopee"
         }
       },
@@ -66,7 +62,7 @@ export async function GET(request: Request) {
         metadata: { shop_id: shopId }
       },
       create: {
-        userId: dbUser.id,
+        userId: user.id,
         provider: "shopee",
         accessToken: access_token,
         refreshToken: refresh_token,
@@ -74,7 +70,7 @@ export async function GET(request: Request) {
       }
     });
 
-    // 4. Redirect the user back to the dashboard or success page
+    // 3. Redirect the user back to the dashboard
     const host = request.headers.get("host") || "localhost:3000";
     const protocol = host.includes("localhost") ? "http" : "https";
     return NextResponse.redirect(`${protocol}://${host}/dashboard?shopee_connected=true`);
